@@ -1,0 +1,161 @@
+package ggwrapper
+
+var pTag string = "[GGwrapper."
+
+type Inst uint8
+
+// Since this and core.Inst share the same opcode range,
+// this is shifted up by 32 to keep space.
+const (
+	GGNEWCONTEXT Inst = iota + 32
+	GGACTIVECONTEXT
+	GGSAVE
+	GGDEGREES
+	GGRADIANS
+	GGCLEAR
+	GGCLIP
+	GGRESETCLIP
+	GGCLOSEPATH
+	GGARC
+	GGCIRCLE
+	GGELLIPSE
+	GGIMAGE
+	GGLINE
+	GGPOINT
+	GGRECT
+	GGSTRING
+	GGMOVETO
+	GGLINETO
+	GGQUADTO
+	GGCUBICTO
+	GGPOP
+	GGPUSH
+	GGSCALEABT
+	GGRGBA
+	GGSHEAR
+	GGSTRLEN
+	GGFILL
+	GGFILLPRES
+	GGSETLINEWIDTH
+	GGTRANSLATE
+	GGINVERTMASK
+	GGFONTSIZE
+	GGFONTFILE
+)
+
+var Commands = map[string]Inst{
+	"GGNEWCONTEXT": GGNEWCONTEXT,
+	"GGACTIVECONTEXT": GGACTIVECONTEXT,
+	"GGSAVE": GGSAVE,
+	"GGDEGREES": GGDEGREES,
+	"GGRADIANS": GGRADIANS,
+	"GGCLEAR": GGCLEAR,
+	"GGCLIP": GGCLIP,
+	"GGRESETCLIP": GGRESETCLIP,
+	"GGCLOSEPATH": GGCLOSEPATH,
+	"GGARC": GGARC,
+	"GGCIRCLE": GGCIRCLE,
+	"GGELLIPSE": GGELLIPSE,
+	"GGIMAGE": GGIMAGE,
+	"GGLINE": GGLINE,
+	"GGPOINT": GGPOINT,
+	"GGRECT": GGRECT,
+	"GGSTRING": GGSTRING,
+	"GGMOVETO": GGMOVETO,
+	"GGLINETO": GGLINETO,
+	"GGQUADTO": GGQUADTO,
+	"GGCUBICTO": GGCUBICTO,
+	"GGPOP": GGPOP,
+	"GGPUSH": GGPUSH,
+	"GGSCALEABT": GGSCALEABT,
+	"GGRGBA": GGRGBA,
+	"GGSHEAR": GGSHEAR,
+	"GGSTRLEN": GGSTRLEN,
+	"GGFILL": GGFILL,
+	"GGFILLPRES": GGFILLPRES,
+	"GGSETLINEWIDTH": GGSETLINEWIDTH,
+	"GGTRANSLATE": GGTRANSLATE,
+	"GGINVERTMASK": GGINVERTMASK,
+	"GGFONTSIZE": GGFONTSIZE,
+	"GGFONTFILE": GGFONTFILE,
+}
+
+func (op Inst) OpCode() uint8 { return uint8(op) }
+func (op Inst) String() string {
+	switch op {
+	case GGNEWCONTEXT:
+		return "GGNEWCONTEXT"
+	case GGACTIVECONTEXT:
+		return "GGACTIVECONTEXT"
+	case GGSAVE:
+		return "GGSAVE"
+	case GGDEGREES:
+		return "GGDEGREES"
+	case GGRADIANS:
+		return "GGRADIANS"
+	case GGCLEAR:
+		return "GGCLEAR"
+	case GGCLIP:
+		return "GGCLIP"
+	case GGRESETCLIP:
+		return "GGRESETCLIP"
+	case GGCLOSEPATH:
+		return "GGCLOSEPATH"
+	case GGARC:
+		return "GGARC"
+	case GGCIRCLE:
+		return "GGCIRCLE"
+	case GGELLIPSE:
+		return "GGELLIPSE"
+	case GGIMAGE:
+		return "GGIMAGE"
+	case GGLINE:
+		return "GGLINE"
+	case GGPOINT:
+		return "GGPOINT"
+	case GGRECT:
+		return "GGRECT"
+	case GGSTRING:
+		return "GGSTRING"
+	case GGMOVETO:
+		return "GGMOVETO"
+	case GGLINETO:
+		return "GGLINETO"
+	case GGQUADTO:
+		return "GGQUADTO"
+	case GGCUBICTO:
+		return "GGCUBICTO"
+	case GGPOP:
+		return "GGPOP"
+	case GGPUSH:
+		return "GGPUSH"
+	case GGSCALEABT:
+		return "GGSCALEABT"
+	case GGRGBA:
+		return "GGRGBA"
+	case GGSHEAR:
+		return "GGSHEAR"
+	case GGSTRLEN:
+		return "GGSTRLEN"
+	case GGFILL:
+		return "GGFILL"
+	case GGFILLPRES:
+		return "GGFILLPRES"
+	case GGSETLINEWIDTH:
+		return "GGSETLINEWIDTH"
+	case GGTRANSLATE:
+		return "GGTRANSLATE"
+	case GGINVERTMASK:
+		return "GGINVERTMASK"
+	case GGFONTSIZE:
+		return "GGFONTSIZE"
+	case GGFONTFILE:
+		return "GGFONTFILE"
+	default:
+		return "UNKNOWN_GGWRAPPER"
+	}
+}
+
+func (a Inst) HasImmediate() (bool, string) {
+	return false, ""
+}
