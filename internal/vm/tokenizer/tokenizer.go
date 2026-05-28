@@ -1,11 +1,14 @@
 package tokenizer
 
 import (
-	"fmt"
 	"errors"
-	"strings"
-	"unicode"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"text/tabwriter"
+	"unicode"
 
 	"github.com/avr34/ggvm/internal/logging"
 	"github.com/avr34/ggvm/internal/vm/core"
@@ -50,7 +53,10 @@ type Token struct {
 	Int     int64
 	Varname string
 	Line    uint
+	File    string
 }
+
+type TokenList []Token
 
 func init() {
 	for name, op := range core.Commands {
@@ -91,14 +97,13 @@ const (
 	StateCommand
 	StateLabel
 	StateString
-	StateFloat
-	StateInt
+	StateNum
 	StateVar
 )
 
 // BNF Grammar:
 //
-// <idle>      := <label> | <command> | <comment>
+// <idle>      := <label> | <immediate (not varname)> | <command> | <comment>
 // <label>     := <A-Z, a-z>:
 // <comment>   := ;<anything>\n
 // <command>   := <from list><delimiter> | <from list><delimiter><immediate><delimiter>
@@ -107,31 +112,31 @@ const (
 // <int>       := <number> | -<number>
 // <float>     := <number>.<number> | -<number>.<number>
 // <varname>   := $<a-z, 0-9>
-func Tokenize(source string) (*[]Token, error) {
+func Tokenize(source string, filename string) (*TokenList, error) {
 	tag := pTag + "Tokenize]: "
-	var tokens []Token
+
+	filename = filepath.Base(filename)
+	fileext := filepath.Ext(filename)
+	filename = strings.TrimSuffix(filename, fileext)
+
+	var tokens TokenList
 	var buffer strings.Builder
-	
+
 	var stringStart bool
 
-	var floatStart bool
-	var floatDecimal bool
-	
-	var intStart bool
-	
+	var numStart bool
+	var numDecimal bool
+
 	var stateVarStart bool
+
+	var ch rune
 
 	state := StateIdle
 	var line uint = 1
 	runes := []rune(source)
 
 	for i := 0; i < len(runes); i++ {
-		ch := runes[i]
-	
-		// On newline increment line counter.
-		if ch == '\n' {
-			line++
-		}
+		ch = runes[i]
 
 		switch state {
 		case StateIdle:
@@ -140,6 +145,13 @@ func Tokenize(source string) (*[]Token, error) {
 			} else if unicode.IsLetter(ch) {
 				state = StateCommand
 				buffer.WriteRune(ch)
+			} else if ch == '-' || unicode.IsDigit(ch) {
+				state = StateNum
+				numStart = true
+				buffer.WriteRune(ch)
+			} else if ch == '"' {
+				state = StateString
+				stringStart = true
 			}
 		case StateComment:
 			// Ignore characters until a newline.
@@ -158,13 +170,14 @@ func Tokenize(source string) (*[]Token, error) {
 				// append to tokens and reset buffer. If there's an immediate, check for that.
 				command, err := getCommand(buffer.String())
 				if err != nil {
-					return &tokens, fmt.Errorf(logging.ErrLog(tag) + "Failed to parse command %s", buffer)
+					return &tokens, fmt.Errorf(logging.ErrLog(tag)+"Failed to parse command %s", buffer)
 				}
 
 				tokens = append(tokens, Token{
-					Type: TokenCommand,
+					Type:    TokenCommand,
 					Command: command,
-					Line: line,
+					Line:    line,
+					File:    filename,
 				})
 
 				buffer.Reset()
@@ -181,9 +194,10 @@ func Tokenize(source string) (*[]Token, error) {
 				return &tokens, errors.New(logging.ErrLog(tag) + "Can't have . in label")
 			}
 			tokens = append(tokens, Token{
-				Type: TokenLabel,
+				Type:   TokenLabel,
 				String: buffer.String(),
-				Line: line,
+				Line:   line,
+				File:   filename,
 			})
 			state = StateIdle
 			buffer.Reset()
@@ -194,9 +208,10 @@ func Tokenize(source string) (*[]Token, error) {
 			} else if stringStart && ch == '"' {
 				// String has ended
 				tokens = append(tokens, Token{
-					Type: TokenString,
+					Type:   TokenString,
 					String: buffer.String(),
-					Line: line,
+					Line:   line,
+					File:   filename,
 				})
 				buffer.Reset()
 				state = StateIdle
@@ -205,78 +220,46 @@ func Tokenize(source string) (*[]Token, error) {
 				// Within string
 				buffer.WriteRune(ch)
 			}
-		case StateFloat:
-			if !unicode.IsDigit(ch) && ch != '.' && ch != '-' {
+		case StateNum:
+			if !numStart && (unicode.IsDigit(ch) || ch == '-') {
+				// Beginning of number
 				buffer.WriteRune(ch)
-				return &tokens, fmt.Errorf(logging.ErrLog(tag) + "Unable to parse %s as float", buffer)
-			}
-
-			if !floatStart && (unicode.IsDigit(ch) || ch == '-') {
-				// Beginning of float
+				numStart = true
+			} else if numStart && unicode.IsDigit(ch) {
+				// Within number
 				buffer.WriteRune(ch)
-				floatStart = true
-			} else if floatStart && unicode.IsDigit(ch) {
-				// Within float
+			} else if numStart && ch == '.' {
+				// Decimal point, it's a float.
 				buffer.WriteRune(ch)
-			} else if floatStart && ch == '.' {
-				// Decimal point
-				buffer.WriteRune(ch)
-				floatDecimal = true
-			} else if floatStart && floatDecimal && whitespace(ch) {
+				numDecimal = true
+			} else if numStart && numDecimal && whitespace(ch) {
 				// Complete
 				val, err := strconv.ParseFloat(buffer.String(), 64)
 				if err != nil {
-					return &tokens, fmt.Errorf(logging.ErrLog(tag) + "Error parsing float: %w", err)
+					return &tokens, fmt.Errorf(logging.ErrLog(tag)+"Error parsing float: %w", err)
 				}
 				tokens = append(tokens, Token{
-					Type: TokenFloat,
+					Type:  TokenFloat,
 					Float: val,
-					Line: line,
+					Line:  line,
+					File:  filename,
 				})
-				floatStart, floatDecimal = false, false
+				numStart, numDecimal = false, false
 				state = StateIdle
 				buffer.Reset()
-			} else if floatStart && !floatDecimal && whitespace(ch) {
-				// Complete, but entered as int. Cast to float64.
-				val2, err := strconv.ParseInt(buffer.String(), 10, 64)
-				val := float64(val2)
-				if err != nil {
-					return &tokens, fmt.Errorf(logging.ErrLog(tag) + "Error parsing int: %w", err)
-				}
-				tokens = append(tokens, Token{
-					Type: TokenFloat,
-					Float: val,
-					Line: line,
-				})
-				floatStart, floatDecimal = false, false
-				state = StateIdle
-				buffer.Reset()
-			}
-		case StateInt:
-			if !unicode.IsDigit(ch)  && ch != '-' {
-				buffer.WriteRune(ch)
-				return &tokens, fmt.Errorf(logging.ErrLog(tag) + "Unable to parse %s as int", buffer)
-			}
-			
-			if !intStart && (unicode.IsDigit(ch) || ch == '-') {
-				// Beginning of int
-				buffer.WriteRune(ch)
-				intStart = true
-			} else if intStart && unicode.IsDigit(ch) {
-				// Within int
-				buffer.WriteRune(ch)
-			} else if intStart && whitespace(ch) {
-				// Complete
+			} else if numStart && !numDecimal && whitespace(ch) {
+				// Complete, it's an int.
 				val, err := strconv.ParseInt(buffer.String(), 10, 64)
 				if err != nil {
-					return &tokens, fmt.Errorf(logging.ErrLog(tag) + "Error parsing int: %w", err)
+					return &tokens, fmt.Errorf(logging.ErrLog(tag)+"Error parsing int: %w", err)
 				}
 				tokens = append(tokens, Token{
 					Type: TokenInt,
-					Int: val,
+					Int:  val,
 					Line: line,
+					File: filename,
 				})
-				intStart = false
+				numStart, numDecimal = false, false
 				state = StateIdle
 				buffer.Reset()
 			}
@@ -290,14 +273,20 @@ func Tokenize(source string) (*[]Token, error) {
 			} else if stateVarStart && whitespace(ch) {
 				// Complete
 				tokens = append(tokens, Token{
-					Type: TokenVar,
+					Type:    TokenVar,
 					Varname: buffer.String(),
-					Line: line,
+					Line:    line,
+					File:    filename,
 				})
 				stateVarStart = false
 				buffer.Reset()
 				state = StateIdle
 			}
+		}
+
+		// On newline increment line counter.
+		if ch == '\n' {
+			line++
 		}
 	}
 
@@ -316,14 +305,6 @@ func whitespace(a rune) bool {
 func getCommand(a string) (Instruction, error) {
 	a = strings.ToUpper(a)
 
-	// command, err := core.OpCodeStr(a)
-	// if err != nil {
-	// 	command, err = ggwrapper.OpCodeStr(a)
-	// 	if err != nil {
-	// 		return command, err
-	// 	}
-	// }
-
 	command := AllCommands[a]
 
 	return command, nil
@@ -339,10 +320,8 @@ func hasImmediate(a Instruction) (bool, TokenizerState) {
 		switch c {
 		case "str":
 			d = StateString
-		case "int":
-			d = StateInt
-		case "float":
-			d = StateFloat
+		case "num":
+			d = StateNum
 		case "var":
 			d = StateVar
 		default:
@@ -352,4 +331,46 @@ func hasImmediate(a Instruction) (bool, TokenizerState) {
 	}
 
 	return b, d
+}
+
+func (a *TokenList) Print() {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+
+	for _, b := range *a {
+		switch b.Type {
+		case TokenCommand:
+			fmt.Fprintf(w, "File: %s\tCommand:   %s\t\tLine: %d\n", b.File, b.Command.String(), b.Line)
+		case TokenLabel:
+			fmt.Fprintf(w, "File: %s\tLabel:     %s\t\tLine: %d\n", b.File, b.String, b.Line)
+		case TokenString:
+			fmt.Fprintf(w, "File: %s\tString:    %s\t\tLine: %d\n", b.File, b.String, b.Line)
+		case TokenFloat:
+			fmt.Fprintf(w, "File: %s\tFloat:     %f\t\tLine: %d\n", b.File, b.Float, b.Line)
+		case TokenInt:
+			fmt.Fprintf(w, "File: %s\tInt:       %d\t\tLine: %d\n", b.File, b.Int, b.Line)
+		case TokenVar:
+			fmt.Fprintf(w, "File: %s\tVariable:  %s\t\tLine: %d\n", b.File, b.Varname, b.Line)
+		}
+	}
+
+	w.Flush()
+}
+
+func (a TokenType) String() string {
+	switch a {
+	case TokenCommand:
+		return "Command"
+	case TokenLabel:
+		return "Label"
+	case TokenString:
+		return "String"
+	case TokenFloat:
+		return "Float"
+	case TokenInt:
+		return "Int"
+	case TokenVar:
+		return "Variable"
+	}
+	
+	return ""
 }
