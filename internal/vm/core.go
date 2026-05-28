@@ -6,6 +6,7 @@ import (
 	"math"
 	"slices"
 	"strings"
+	"strconv"
 	"path/filepath"
 
 	"github.com/fogleman/gg"
@@ -588,5 +589,89 @@ func (v *VMState) coreRet() error {
 	}
 
 	v.PC = addrnode.Value.(int)
+	return nil
+}
+
+func (v *VMState) coreCastfloat() error {
+	tag := pTag + "coreCastfloat]: "
+
+	node := v.Stack.Pop()
+	if node.Type != mem.Int && node.Type != mem.String {
+		return errFunc(tag, "Can only cast int or string to float", v.Tokens[v.PC-1])
+	}
+
+	switch node.Type {
+	case mem.Int:
+		v.Stack.Push(mem.Node{
+			Value: float64(node.Value.(int64)),
+			Type: mem.Float,
+		})
+	case mem.String:
+		val, err := strconv.ParseFloat(node.Value.(string), 64)
+		if err != nil {
+			message := fmt.Sprintf("Can't cast %s to float", node.Value.(string))
+			return errFunc(tag, message, v.Tokens[v.PC-1])
+		}
+		v.Stack.Push(mem.Node{
+			Value: val,
+			Type: mem.Float,
+		})
+	}
+
+	return nil
+}
+
+func (v *VMState) coreCastint() error {	
+	tag := pTag + "coreCastint]: "
+
+	node := v.Stack.Pop()
+	if node.Type != mem.Float && node.Type != mem.String {
+		return errFunc(tag, "Can only cast float or string to int", v.Tokens[v.PC-1])
+	}
+
+	switch node.Type {
+	case mem.Float:
+		v.Stack.Push(mem.Node{
+			Value: int64(node.Value.(float64)),
+			Type: mem.Int,
+		})
+	case mem.String:
+		val, err := strconv.ParseInt(node.Value.(string), 10, 64)
+		if err != nil {
+			message := fmt.Sprintf("Can't cast %s to int", node.Value.(string))
+			return errFunc(tag, message, v.Tokens[v.PC-1])
+		}
+		v.Stack.Push(mem.Node{
+			Value: val,
+			Type: mem.Int,
+		})
+	}
+
+	return nil
+}
+
+func (v *VMState) coreCaststring() error {
+	tag := pTag + "coreCaststring]: "
+
+	node := v.Stack.Pop()
+	if node.Type != mem.Float && node.Type != mem.Int && node.Type != mem.String {
+		return errFunc(tag, "Can only cast int or float to string", v.Tokens[v.PC-1])
+	}
+
+	switch node.Type {
+	case mem.Float:
+		v.Stack.Push(mem.Node{
+			Value: fmt.Sprintf("%f", node.Value.(float64)),
+			Type: mem.String,
+		})
+	case mem.Int:
+		v.Stack.Push(mem.Node{
+			Value: fmt.Sprintf("%d", node.Value.(int64)),
+			Type: mem.String,
+		})
+	case mem.String:
+		v.Stack.Push(node)
+	}
+
 	return nil
 }

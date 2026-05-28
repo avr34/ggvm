@@ -235,10 +235,12 @@ func (v *VMState) execOp(tok tokenizer.Token) error {
 			err = v.coreCall()
 		case core.Ret:
 			err = v.coreRet()
-		// case core.Castint:
-		// 	err = v.coreCastint(tok)
-		// case core.Castfloat:
-		// 	err = v.coreCastfloat(tok)
+		case core.Castint:
+			err = v.coreCastint()
+		case core.Castfloat:
+			err = v.coreCastfloat()
+		case core.Caststring:
+			err = v.coreCaststring()
 		// case core.Help:
 		// 	err = v.coreHelp(tok)
 		case core.Print:

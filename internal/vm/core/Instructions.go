@@ -25,6 +25,7 @@ const (
 	Ret
 	Castint
 	Castfloat
+	Caststring
 	Help
 	Print
 	Halt
@@ -52,6 +53,7 @@ var Commands = map[string]Inst{
 	"RET":       Ret,
 	"CASTINT":   Castint,
 	"CASTFLOAT": Castfloat,
+	"CASTSTRING": Caststring,
 	"HELP":      Help,
 	"PRINT":     Print,
 	"HALT":      Halt,
@@ -103,6 +105,8 @@ func (op Inst) String() string {
 		return "CASTINT"
 	case Castfloat:
 		return "CASTFLOAT"
+	case Caststring:
+		return "CASTSTRING"
 	case Help:
 		return "HELP"
 	case Print:
