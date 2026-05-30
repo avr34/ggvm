@@ -1,0 +1,16 @@
+; call as <input> "factorial.main_int" call
+main_int:
+	store $ret
+	dup store $i
+
+	loop:
+		load $i -1 add
+		dup store $i
+		mul
+
+		load $i
+		1 eq "factorial.loop" jumpz
+		"factorial.exit" jump
+
+	exit:
+		load $ret ret

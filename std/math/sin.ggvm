@@ -1,0 +1,81 @@
+import "std/math/factorial.ggvm"
+import "std/math/pow.ggvm"
+import "std/math/abs.ggvm"
+
+; call as <radian> "sin.main" call
+; returns <output>
+;
+; sin(input) {
+;     change = 1000
+;     output = input
+;     i = 3
+;     j = 0
+;     while change > 0.001 {
+;         change = (input ^ i) / i!
+;         if(j == 0) {
+;             output -= change
+;         } else {
+;             output += change
+;         }
+;     }
+; }
+main:
+	store $ret
+	dup store $input
+	store $output
+	
+	0.0001 store $threshold
+	1000.0 store $change
+	1000.0 store $abs
+	3 store $i
+	0 store $j
+
+	loop:
+		load $input					; calculate input ^ i
+		load $i
+		"pow.main" call
+
+		load $i						; calculate i!
+		"factorial.main_int" call
+
+		castfloat div 				; cast i! to float and divide
+		dup store $change
+
+		dup "abs.main_float" call	; get absolute value
+		store $abs
+
+		load $j						; sub if j == 0
+		"sin.sub" jumpz
+
+		load $j						; add if j == 1
+		0 eq "sin.add" jumpz
+
+		sub:
+			load $output swap		; <output> - <change>
+			sub store $output
+
+			load $i					; set i and j
+			2 add store $i
+			1 store $j
+
+			"sin.after_add_sub" jump
+
+		add:
+			load $output
+			add store $output
+
+			load $i
+			2 add store $i
+			0 store $j
+
+			"sin.after_add_sub" jump
+
+		after_add_sub:
+			load $abs
+			load $threshold
+			lt "sin.loop" jumpz
+			"sin.exit" jump
+
+	exit:
+		load $output
+		load $ret ret

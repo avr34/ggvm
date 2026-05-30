@@ -1,0 +1,35 @@
+; call as <input int> "abs.main_int" call
+main_int:
+	store $ret
+	
+	dup store $input
+	0 gt				; it's greater than 0 (<0 is false)
+	"abs.mult" jumpz	; if less than 0, mult by -1	
+	"abs.exit" jump		; if >0 jump to exit
+
+	mult:
+		load $input
+		-1 mul
+		store $input
+
+	exit:
+		load $input
+		load $ret ret	
+
+; call as <input float> "abs.main_float" call
+main_float:
+	store $ret
+	
+	dup store $input
+	0.0 gt				; it's greater than 0 (<0 is false)
+	"abs.mult" jumpz	; if less than 0, mult by -1	
+	"abs.exit" jump		; if >0 jump to exit
+
+	mult:
+		load $input
+		-1.0 mul
+		store $input
+
+	exit:
+		load $input
+		load $ret ret	

@@ -1,0 +1,18 @@
+; call with <base> <pow> "pow.main" call
+main:
+	store $ret
+	store $pow
+	dup store $base
+	1 store $i
+
+	loop:
+		load $base mul
+
+		load $i
+		1 add dup store $i
+		load $pow
+		eq "pow.loop" jumpz
+		"pow.exit" jump
+
+	exit:
+		load $ret ret
