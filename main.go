@@ -29,14 +29,16 @@ func main() {
 
 		state := vm.Init(*tokenlistptr)
 
-		err = state.Run()
-		if err != nil {
-			log.Fatal(err)
-		}
-		
 		if *printtok {
+			err = state.FirstPass()
+			if err != nil{ log.Fatal(err) }
 			fmt.Println("\nPrinting tokens")
 			state.Tokens.Print()
+		} else {
+			err = state.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 

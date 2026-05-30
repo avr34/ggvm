@@ -3,6 +3,7 @@ package vm
 import (
 	"os"
 	"fmt"
+	"log"
 	"math"
 	"slices"
 	"strings"
@@ -78,7 +79,24 @@ func (v *VMState) coreImport(tok tokenizer.Token) error {
 	
 	// Check for cyclic import
 	if slices.Contains(v.VisitedFiles, joinedpath) {
-		return fmt.Errorf(logging.ErrLog(tag) + "Line %d: Cyclic import detected. %s imported twice.\n", tok.Line, immediate.String)
+		log.Print(logging.StatLog(tag) + fmt.Sprintf("File %s\tLine %d: Possible cyclic import detected. %s imported twice. Ignoring it (not re-importing).\n", tok.File, tok.Line, immediate.String))
+
+		// Remove the import tokens via copying the rest of the slice
+		var newtokslice tokenizer.TokenList
+		for i := 0; i < v.PC - 2; i++ {
+			newtokslice = append(newtokslice, v.Tokens[i])
+		}
+		for i := v.PC; i < v.TotalTokens; i++ {
+			newtokslice = append(newtokslice, v.Tokens[i])
+		}
+		
+		// decrement PC and tok count, and set new slice.
+		v.PC -= 2
+		v.TotalTokens -= 2
+		v.Tokens = newtokslice
+
+		// Rest of the function assumes we're importing, which we're not.
+		return nil
 	} else {
 		v.VisitedFiles = append(v.VisitedFiles, joinedpath)
 	}
@@ -107,10 +125,10 @@ func (v *VMState) coreImport(tok tokenizer.Token) error {
 	//
 	// Current PC:
 	//     <old token> <IMPORT> <IMMEDIATE> <next token>
-	//                          ^
-	//                          v.PC
+	//                                      ^
+	//                                      v.PC
 	// 
-	// Decrement PC by 1, copy current v.Tokens into new Tokens up until v.PC.
+	// Decrement PC by 2, copy current v.Tokens into new Tokens up until v.PC.
 	// Then append all new tokens. After that, append from old list (v.PC + 2) up until
 	// the end of the old token list. Set new token list to v.Tokens. v.PC should now point
 	// at the first token of the spliced tokenlist.
