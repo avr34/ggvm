@@ -197,59 +197,17 @@ func (v *VMState) execOp(tok tokenizer.Token) error {
 			})
 		}
 	} else {
-		switch tok.Command {
-		// No importing, done in first pass
-		// case core.Import:
-		// 	err = v.coreImport(tok)
-		case core.Pop:
-			err = v.corePop()
-		case core.Dup:
-			err = v.coreDup()
-		case core.Swap:
-			err = v.coreSwap()
-		case core.Store:
-			err = v.coreStore()
-		case core.Load:
-			err = v.coreLoad()
-		case core.Add:
-			err = v.coreAdd()
-		case core.Sub:
-			err = v.coreSub()
-		case core.Mul:
-			err = v.coreMul()
-		case core.Div:
-			err = v.coreDiv()
-		case core.Sqrt:
-			err = v.coreSqrt()
-		case core.Lt:
-			err = v.coreLt()
-		case core.Eq:
-			err = v.coreEq()
-		case core.Gt:
-			err = v.coreGt()
-		case core.Jump:
-			err = v.coreJump()
-		case core.Jumpz:
-			err = v.coreJumpz()
-		case core.Call:
-			err = v.coreCall()
-		case core.Ret:
-			err = v.coreRet()
-		case core.Castint:
-			err = v.coreCastint()
-		case core.Castfloat:
-			err = v.coreCastfloat()
-		case core.Caststring:
-			err = v.coreCaststring()
-		// case core.Help:
-		// 	err = v.coreHelp(tok)
-		case core.Print:
-			err = v.corePrint()
+		if tok.Command.OpCode() < 32 {
+			err = v.coreExecOp(tok)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = v.ggExecOp(tok)
+			if err != nil {
+				return err
+			}
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil

@@ -26,7 +26,6 @@ const (
 	Castint
 	Castfloat
 	Caststring
-	Help
 	Print
 	Halt
 	Unknown
@@ -54,7 +53,6 @@ var Commands = map[string]Inst{
 	"CASTINT":   Castint,
 	"CASTFLOAT": Castfloat,
 	"CASTSTRING": Caststring,
-	"HELP":      Help,
 	"PRINT":     Print,
 	"HALT":      Halt,
 	"UNKNOWN":   Unknown,
@@ -107,8 +105,6 @@ func (op Inst) String() string {
 		return "CASTFLOAT"
 	case Caststring:
 		return "CASTSTRING"
-	case Help:
-		return "HELP"
 	case Print:
 		return "PRINT"
 	case Halt:
@@ -128,8 +124,6 @@ func (a Inst) HasImmediate() (bool, string) {
 		return true, "var"
 	case Load:
 		return true, "var"
-	case Help:
-		return true, "str"
 	}
 
 	return false, ""

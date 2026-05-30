@@ -14,6 +14,7 @@ import (
 
 	"github.com/avr34/ggvm/internal/logging"
 	"github.com/avr34/ggvm/internal/vm/mem"
+	"github.com/avr34/ggvm/internal/vm/core"
 	"github.com/avr34/ggvm/internal/vm/tokenizer"
 )
 
@@ -27,6 +28,65 @@ func ensureExtension(a string) string {
 	}
 
 	return a
+}
+
+func (v *VMState) coreExecOp(tok tokenizer.Token) error {
+	var err error
+	switch tok.Command {
+	// No importing, done in first pass
+	// case core.Import:
+	// 	err = v.coreImport(tok)
+	case core.Pop:
+		err = v.corePop()
+	case core.Dup:
+		err = v.coreDup()
+	case core.Swap:
+		err = v.coreSwap()
+	case core.Store:
+		err = v.coreStore()
+	case core.Load:
+		err = v.coreLoad()
+	case core.Add:
+		err = v.coreAdd()
+	case core.Sub:
+		err = v.coreSub()
+	case core.Mul:
+		err = v.coreMul()
+	case core.Div:
+		err = v.coreDiv()
+	case core.Sqrt:
+		err = v.coreSqrt()
+	case core.Lt:
+		err = v.coreLt()
+	case core.Eq:
+		err = v.coreEq()
+	case core.Gt:
+		err = v.coreGt()
+	case core.Jump:
+		err = v.coreJump()
+	case core.Jumpz:
+		err = v.coreJumpz()
+	case core.Call:
+		err = v.coreCall()
+	case core.Ret:
+		err = v.coreRet()
+	case core.Castint:
+		err = v.coreCastint()
+	case core.Castfloat:
+		err = v.coreCastfloat()
+	case core.Caststring:
+		err = v.coreCaststring()
+	case core.Halt:
+		err = v.coreHalt()
+	case core.Print:
+		err = v.corePrint()
+	}	
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (v *VMState) getImmediate(tokentype tokenizer.TokenType) (tokenizer.Token, error) {
@@ -691,5 +751,10 @@ func (v *VMState) coreCaststring() error {
 		v.Stack.Push(node)
 	}
 
+	return nil
+}
+
+func (v *VMState) coreHalt() error {
+	v.Halted = true
 	return nil
 }
