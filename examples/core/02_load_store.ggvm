@@ -1,0 +1,27 @@
+; load store example
+;
+; the command `store $varname` will store the value at the top of the stack into
+; a variable named 'varname'. This variable can consist of letters and numbers but
+; cannot start with a number.
+;
+; likewise, `load $varname` will take the value from the variable 'varname' and put
+; it onto the stack.
+;
+; Note: storing a value into a variable will pop it off the stack, but loading from
+; memory will NOT clear it from memory.
+
+
+main:
+    10              ; Loads 10 onto the stack
+    20              ; Loads 20 onto the stack
+
+    store $twenty   ; Stores into the `twenty` variable
+    store $ten      ; Stores into the `ten` variable
+
+    load $ten       ; Load 10, print, and store
+    print
+    store $ten
+
+    load $twenty    ; Load 20, print, and store
+    print
+    store $twenty

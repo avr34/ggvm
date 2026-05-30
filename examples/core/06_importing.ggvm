@@ -1,0 +1,31 @@
+; Importing example
+;
+; Importing makes complicated projects very simple. Simple import a ggvm file which contains
+; a function you want to use, and call it using the call command. In the previous example, 
+; there's a fibonacci function which takes the inputs of the first and second terms, and a
+; number of how many extra to calculate ahead. In this example lets import the previous
+; example and call its function.
+
+
+import "05_branching.ggvm"
+
+main:
+    1 1 10
+    "05_branching.fib_func" call
+    print                           ; output should be 1 1 2 3 5 8 13 21 34 55 89 144
+                                    ; it should be 144
+
+
+; GGVM will first search local directories for the import file, and if it's not found it'll
+; look in ~/ggvm. At the root of this project there's a std folder; if you place it in your
+; home directory at ~/ggvm/std, you will have access to the std lib functions (which as of date
+; is just the sine function, implemented as a taylor series). I'm planning on adding more 
+; eventually.
+;
+; NOTE: While importing is very powerful, it is also dangerous. There are issues with cyclic 
+; imports (ie, A -> B, B -> C, C -> A) which are currently unresolved. If the GGVM tokenizer
+; notices that a file it has tokenized shows up once more, it'll throw you a warning to let
+; you know, and skip over that import to avoid an infinite loop. However, if you have two
+; functions in those files which inadvertently call each other, the program will get stuck
+; in an infinite loop, jumping from one function to the other. Please use caution. I'd advise
+; a top-down approach; no interdependency.

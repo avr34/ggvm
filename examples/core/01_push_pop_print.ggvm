@@ -1,0 +1,28 @@
+; Push/pop/print example
+;
+; In ggvm, pushing onto the stack is an implicit operation. There is no 'push'
+; keyword. Simply type the value and it will be pushed.
+;
+; Current types are Integer, Floating point, String, Return address, and gg
+; context pointer for drawing. Only the first 3 can be pushed via code, others
+; are handled internally
+;
+; Main label is the entry point of the program. everything after runs sequentially
+
+
+main:
+    10          ; Pushes integer 10 onto the stack
+    10.0        ; Pushes floating point 10 onto the stack
+    "Hello"     ; Pushes string onto the stack
+
+
+; The value at the top of the stack can be printed using the print command.
+; The pop command will take the top off the stack and discard it.
+
+
+    print print  ; Prints "Hello" twice
+    pop print    ; Pops the "Hello" and prints 10.0
+    pop print    ; Pops the 10.0 and prints 10
+
+
+; Run this example in a terminal via `ggvm 01_push.ggvm`

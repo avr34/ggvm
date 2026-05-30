@@ -1,0 +1,23 @@
+; casting example
+;
+; Casting helps do otherwise impossible operations. There are 3 types of casting:
+;
+; 1. String to int or float: if a string can be parsed into an int or float, it
+;    can be cast.
+; 2. Int to string or float: Likewise
+; 3. Float to int or string: likewise
+;
+; After casting, you can operate on those values as usual, and cast them back if you wish
+
+
+main:
+    "10.0" castfloat    ; push and cast "10.0" from string to float
+    "20.0" castfloat    ; push and cast "20.0" from string to float
+    add print pop       ; Add them, print, and pop that.
+
+    3.1415 castint      ; cast pi to int
+    1
+    sub print           ; subtract 3 and 1, and print
+
+    caststring          ; cast to string
+    print               ; print

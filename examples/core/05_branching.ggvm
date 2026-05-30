@@ -1,0 +1,65 @@
+; branching example
+;
+; Branching can be done via jump, jumpz, or call. The first two will simply jump to the
+; label which is on the top of the stack, while the call command will do the same, and push
+; the return address. This is for writing functions.
+;
+; Jumpz comes in handy the most for looping. If we want to find a factorial of a number, we
+; can use jumpz as follows:
+
+
+main:
+    10 dup store $N            ; Store 10, the number to factorial
+    -1 add store $i            ; Store 10-1, the index
+
+    loop:
+        load $N                ; Load 10 and 9
+        load $i
+        mul store $N           ; Muliply and store into N
+
+        load $i                            ; Load index
+        -1 add dup store $i                ; Decrement, duplicate, and store in $i
+        1 eq "05_branching.loop" jumpz     ; if not equal to 1 ($i 1 eq => 0) jump to loop label
+        
+    load $N print              ; Print final N
+
+
+; The call command comes in handy when writing functions rather than loops. In other examples
+; you can find the import command, to import other files. This allows you to call functions from
+; other files.
+;
+; Below I've defined a fibonacci function. It takes the first and second terms, and the number
+; of extra terms to calculate, and spits out the according fibonacci number. This is how to
+; call it
+
+
+    1 1 5                                  ; start with 1 and 1, calculate 5 ahead
+    "05_branching.fib_func" call           ; call it
+    print halt                             ; print output and halt
+
+
+fib_func:
+    store $retaddr                   ; store return address
+
+    store $count                     ; store count
+    store $first                     ; store first term
+    store $second                    ; store second term
+
+    0 store $i                       ; set index
+
+    fib_loop:
+        load $first                  ; load and add terms
+        load $second
+        add store $out
+
+        load $second store $first    ; shift second -> first, out -> second
+        load $out store $second
+
+        load $i                      ; increment i, compare, and loop
+        1 add dup store $i
+        load $count
+        eq "05_branching.fib_loop" jumpz
+
+    load $out                        ; load output
+    load $retaddr                    ; load return address
+    ret                              ; return
